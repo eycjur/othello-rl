@@ -1,0 +1,2 @@
+class GoOutOfBoardError(Exception):
+    pass

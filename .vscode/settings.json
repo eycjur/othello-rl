@@ -1,0 +1,8 @@
+{
+	"python.formatting.provider": "black",
+	"isort.check": true,
+	"editor.formatOnSave": true,
+	"editor.codeActionsOnSave": {
+        "source.organizeImports": true
+    },
+}

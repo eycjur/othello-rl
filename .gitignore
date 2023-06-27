@@ -1,0 +1,7 @@
+*.pkl
+.DS_Store
+__pycache__/
+
+images/
+output/
+.env
