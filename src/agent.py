@@ -2,7 +2,7 @@ import copy
 import random
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
-from typing import Any, List
+from typing import Any, List, Optional
 
 import dill
 import matplotlib.pyplot as plt
@@ -128,7 +128,7 @@ class DQNAgent(TrainAgentInterface):
         activation: str = "relu",
         dropout: float = 0,
         loss_func: Any = "mean_squared_error",  # keras.losses.Huber(),
-        optimizer: Any = Adam(lr=0.001),
+        optimizer: Any = Adam(lr=0.01),
     ) -> None:
         """Q関数を用いた方策
 
@@ -186,19 +186,21 @@ class DQNAgent(TrainAgentInterface):
                 X, next_action_candidates, True
             )
             argmax_a = max(place_map_value, key=place_map_value.get)  # type: ignore
-            max_q = self._predict_action_candidates(X, next_action_candidates)[argmax_a]
+            q = self._predict_action_candidates(X, next_action_candidates)[argmax_a]
         else:
-            max_q = 0
+            q = 0
 
         target = reward
         if not done:
-            target += self._gamma * max_q
+            target += self._gamma * q
         X = self._create_X(state, turn)
         y = self._create_y(X, action, target)
         self.memory.add((X, y))
 
     def replay(self, batch_size: int) -> None:
         experiences = self.memory.sample(batch_size)
+        # データ拡張
+        experiences = [self._data_augmentation(*Xy) for Xy in experiences]
         X = np.concatenate([X for X, _ in experiences])
         y = np.concatenate([y for _, y in experiences])
         history = self.model.fit(X, y, epochs=10, verbose=0)
@@ -268,20 +270,18 @@ class DQNAgent(TrainAgentInterface):
             x = Dropout(self._dropout)(x)
             return x
 
-        input_state = Input(shape=(*self._shape, len(Stone) + 1))
-        x = input_state
-        for _ in range(self._num_block):
+        inputs = Input(shape=(*self._shape, len(Stone)))
+        x = Block(inputs, num_conv=2, kernel_size=3)
+        for i in range(self._num_block - 1):
             x = Block(x, num_conv=2, kernel_size=3)
         v = Flatten()(x)
         v = Dense(256, activation=self._activation)(v)
         v = Dropout(self._dropout)(v)
         v = Dense(1, activation="linear")(v)
-        adv = Block(x, num_conv=1, kernel_size=3)
-        adv = Conv2D(1, kernel_size=(1, 1), padding="same")(adv)
-        output = v + adv - K.mean(adv, axis=1, keepdims=True)
-        # add = Add()([v, adv])
-        # output = Add()([add, - K.mean(adv, axis=1,keepdims=True)])
-        model = Model(inputs=input_state, outputs=output)
+        adv = Block(x, num_conv=2, kernel_size=3)
+        adv = Conv2D(1, kernel_size=(3, 3), padding="same")(adv)
+        outputs = Add()([v, adv - K.mean(adv, axis=(1, 2), keepdims=True)])
+        model = Model(inputs=inputs, outputs=outputs)
         model.compile(loss=self._loss_func, optimizer=self._optimizer)
         model.summary()
         return model
@@ -311,9 +311,9 @@ class DQNAgent(TrainAgentInterface):
         Returns:
             np.ndarray: 入力データ
         """
-        encoded_matrix = to_categorical(state.get_array(), num_classes=len(Stone))
-        turn_expand = np.full((*self._shape, 1), turn.stone.value)
-        return np.expand_dims(np.concatenate([encoded_matrix, turn_expand], axis=2), 0)
+        # 白番と黒番で同じモデルを使うので、白番の場合は盤面を反転させる
+        encoded_matrix = to_categorical(state.get_array() * turn.stone.value - min(Stone).value, num_classes=len(Stone))
+        return np.expand_dims(encoded_matrix, 0)
 
     def _create_y(self, X: np.ndarray, action: Place, target: float) -> np.ndarray:
         """教師データの作成
@@ -330,3 +330,17 @@ class DQNAgent(TrainAgentInterface):
         target_ = self.model.predict(X, verbose=0)
         target_[0][action.y, action.x] = target
         return target_
+
+    def _data_augmentation(self, X: np.ndarray, y: np.ndarray, k: Optional[int] = None) -> None:
+        """データ拡張
+
+        Args:
+            X (np.ndarray): 入力データ
+            y (np.ndarray): 教師データ
+            k (Optional[int], optional): 回転回数. Defaults to None.
+        """
+        if k is None:
+            k = random.randrange(0, 3)
+        X = np.rot90(X, k, axes=(1, 2)).copy()
+        y = np.rot90(y, k, axes=(1, 2)).copy()
+        return X, y

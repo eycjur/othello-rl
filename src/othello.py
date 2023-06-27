@@ -15,7 +15,7 @@ class Board:
             raise ValueError("Board size must be even")
 
         self.size = size
-        self._array = np.full((self.size, self.size), Stone.EMPTY, dtype=np.uint8)
+        self._array = np.full((self.size, self.size), Stone.EMPTY, "int8")
         self.reset()
 
     def reset(self) -> None:
@@ -46,17 +46,17 @@ class Board:
             Stone: 石
         """
         self._check_out_of_board(key)
-        return self._array[key.y, key.x]
+        return Stone.stone_from_int(self._array[key.y, key.x])
 
-    def __setitem__(self, key: Place, val: Stone) -> None:
+    def __setitem__(self, key: Place, stone: Stone) -> None:
         """盤面の座標を指定して石を置く
 
         Args:
             key (Place): 盤面の座標
-            val (Stone): 石
+            stone (Stone): 石
         """
         self._check_out_of_board(key)
-        self._array[key.y, key.x] = val
+        self._array[key.y, key.x] = stone
 
     def __str__(self) -> str:
         """盤面を文字列に変換する
@@ -203,11 +203,11 @@ class Othello:
         Raises:
             ValueError: 石を置けない場所に置こうとした場合
         """
-        if not self._check_put(place, stone):
-            raise ValueError("Can't set stone")
-
         if isinstance(place, Pass):
             return
+
+        if not self._check_put(place, stone):
+            raise ValueError("Can't set stone")
 
         for direction in Direction:
             if self._return(place, stone, direction, check_only=True):

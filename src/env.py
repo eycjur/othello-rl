@@ -60,14 +60,9 @@ class OthelloEnv(gym.Env):
         Returns:
             tuple[Board, float, bool, dict]: 盤面, 報酬, ゲーム終了フラグ, その他の情報
         """
-        # action_place = (
-        #     Place(action // self.size, action % self.size)
-        #     if action < self.size**2
-        #     else Pass()
-        # )
-
-        self._othello.put(action, self.turn.stone)
-        self.turn = self.turn.change_turn()
+        if self.mystone == self.turn.stone:
+            self._othello.put(action, self.turn.stone)
+            self.turn = self.turn.change_turn()
 
         action_oppoent = self.opponent_agent.get_action(
             self._othello.get_board(),

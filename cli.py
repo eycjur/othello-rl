@@ -11,6 +11,7 @@ from src.agent import (
 )
 from src.env import OthelloEnv
 from src.utils.enums import Place, Result, Stone
+from src.utils.util import Turn
 
 app = typer.Typer()
 
@@ -23,7 +24,7 @@ def learn(
     render: bool = False,
     batch_size: int = 32,
     is_test: bool = False,
-    model_sync_frequency: int = 100,
+    model_sync_frequency: int = 25,
 ) -> None:
     env = OthelloEnv(size)
 
@@ -35,9 +36,8 @@ def learn(
 
         while not done:
             action_candidate = env.search_action_candidate(env.turn)
-            turn_copy = copy.copy(env.turn)
             action = my_agent.get_action(
-                observation, action_candidate, turn_copy, mystone
+                observation, action_candidate, env.turn, mystone
             )
             observation_next, reward, done, _ = env.step(action)
 
@@ -48,7 +48,7 @@ def learn(
                     reward=reward,
                     next_state=observation_next,
                     next_action_candidates=action_candidate,
-                    turn=turn_copy,
+                    turn=Turn(mystone),
                     done=done,
                 )
 
