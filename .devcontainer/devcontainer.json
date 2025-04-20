@@ -1,0 +1,41 @@
+{
+  "name": "Existing Docker Compose (Extend)",
+  "dockerComposeFile": [
+    "../compose.yml",
+    "./compose.override.yml"
+  ],
+  "service": "app",
+  "workspaceFolder": "/app",
+  "shutdownAction": "stopCompose",
+  "overrideCommand": true,
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        // 開発支援
+        "ceintl.vscode-language-pack-ja",
+        "github.copilot",
+        "usernamehw.errorlens",
+        "gruntfuggly.todo-tree",
+        "ibm.output-colorizer",
+        "editorconfig.editorconfig",
+        "mosapride.zenkaku",
+        "ionutvmi.path-autocomplete",
+        // python関連
+        "ms-python.python",
+        "charliermarsh.ruff",
+        "ms-python.mypy-type-checker",
+        "njpwerner.autodocstring",
+        "ms-toolsai.jupyter",
+        "ms-toolsai.jupyter-keymap",
+        // Markdown関連
+        "yzane.markdown-pdf",
+        // CSV関連
+        "janisdd.vscode-edit-csv",
+        // Git関連
+        "mhutchie.git-graph",
+        "ritwickdey.liveserver",
+        "hashicorp.terraform"
+      ]
+    }
+  }
+}

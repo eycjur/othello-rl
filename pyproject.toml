@@ -1,0 +1,96 @@
+[tool.poetry]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "~3.10"
+gym = "^0.26.2"
+matplotlib = "^3.10.1"
+dill = "^0.4.0"
+typer = "^0.15.2"
+tqdm = "^4.67.1"
+keras = "^2.9"
+tensorflow = "~2.15.0"
+dash = "~2.11.0"
+dash-bootstrap-components = "~1.4.1"
+
+[tool.poetry.group.dev.dependencies]
+mypy = "1.8.0"
+pytest = "^8.0.0"
+types-pyyaml = "^6.0.12.12"
+ruff = "0.2.1"
+pytest-cov = "^4.1.0"
+pre-commit = "^3.7.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    # cf. https://docs.astral.sh/ruff/rules/
+    "A",  # flake8-builtins（組み込み関数を変数やパラメーターとして利用していないかをチェック）
+    "B",  # flake8-bugbear（プログラム内の潜在的なバグや設計上の問題を検知）
+    "C4",  # flake8-comprehensions（list/set/dictのコードの最適化や改善）
+    "C90",  # mccabe（複雑度をチェック）
+    "E",  # pycodestyle error（PEP8に準拠したコーディングスタイル）
+    "F",  # Pyflakes（文法エラーのチェックや不要なインポートの検出）
+    "I",  # isort（インポート文をソート）
+    "N",  # pep8-naming（PEP8に準拠した命名規則）
+    "PERF", # Perflint（パフォーマンス上の問題を検知）
+    "PIE",  # flake8-pie（その他のルール）
+    "PT", # flake8-pytest-style（Pytestのテストコードのスタイルチェック）
+    "RUF",  # ruff-specific rules（ruff特有のルール）
+    "S",  # flake8-bandit（セキュリティ上の問題を検知）
+    "SIM",  # flake8-simplify（冗長なコードや非効率なコードを簡潔な形に改善）
+    "W",  # pycodestyle warning（PEP8に準拠したコーディングスタイル）
+]
+fixable = ["E", "F", "I"]
+unfixable = ["W", "F401", "F841"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "S101",
+]
+
+[tool.mypy]
+python_version = "3.12"
+# チェック項目
+strict = true
+warn_unreachable = true
+# strictを打ち消す
+disallow_subclassing_any = false
+warn_return_any = false
+disallow_any_decorated = false
+disallow_any_generics = false
+disallow_untyped_calls = false
+disallow_untyped_decorators = false
+no_implicit_reexport = false
+warn_unused_ignores = false
+# サードパーティー製のライブラリを無視
+ignore_missing_imports = true
+# 表示関係
+pretty = true
+show_error_codes = true
+show_error_context = true
+show_column_numbers = true
+show_error_code_links = true
+show_traceback = true
+exclude = ["dist"]
+# cf. https://mypy.readthedocs.io/en/stable/config_file.html
+
+[[tool.mypy.overrides]]
+module = ["requests.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["azure.*"]
+ignore_errors = true
+
+[tool.pytest]
+minversion = "6.0"
+addopts = "-svv --tb=short --capture=no --full-trace"
+testpaths = ["tests/*"]

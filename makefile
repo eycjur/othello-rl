@@ -1,33 +1,46 @@
 include .env
 
-.PHONY: all
-all: build run
+.PHONY: train
+train:
+	poetry run python cli.py train
 
-.PHONY: build
-build:
-	docker build -t ${CONTAINER_NAME} --platform x86_64 .
-
-.PHONY: run
-run:
-	docker run -it -v ${CONTAINER_NAME}
+.PHONY: test
+test:
+	poetry run python cli.py test
 
 .PHONY: deploy
 deploy:
 	./deploy_gcp.sh
 
-.PHONY: train
-train:
-	docker run -it \
-		-v $(shell pwd)/output:/app/output \
-		-v $(shell pwd)/requirements.txt:/app/requirements.txt \
-		-v $(shell pwd)/cli.py:/app/cli.py \
-		-v $(shell pwd)/images:/app/images \
-		${CONTAINER_NAME} python cli.py train
+## dockerの実行コマンド
+# コンテナのビルド・起動
+.PHONY: up
+up:
+	docker compose up --build
 
-.PHONY: test
-test:
-	docker run -it \
-		-v $(shell pwd)/output:/app/output \
-		-v $(shell pwd)/requirements.txt:/app/requirements.txt \
-		-v $(shell pwd)/cli.py:/app/cli.py \
-		${CONTAINER_NAME} python cli.py test
+# コンテナのビルド・起動（キャッシュを使わない）
+.PHONY: up-no-cache
+up-no-cache:
+	docker compose build --no-cache
+	docker compose up
+
+# コンテナ内のシェル実行
+.PHONY: exec
+exec:
+	docker compose exec app bash
+
+# コンテナを停止して削除
+.PHONY: down
+down:
+	docker compose down --remove-orphans
+
+# コンテナを再起動
+.PHONY: restart
+restart:
+	@make --no-print-directory down
+	@make --no-print-directory up
+
+# コンテナを停止して一括削除
+.PHONY: destroy
+destroy:
+	docker compose down --rmi all --volumes --remove-orphans

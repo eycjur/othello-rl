@@ -5,8 +5,17 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
+			"name": "Dash: サーバーを起動",
+			"type": "debugpy",
+			"request": "launch",
+			"module": "app",
+			"cwd": "${workspaceFolder}",
+			"console": "internalConsole",
+			"justMyCode": false
+		},
+		{
 			"name": "Python: cli.py",
-			"type": "python",
+			"type": "debugpy",
 			"request": "launch",
 			"program": "cli.py",
 			"console": "integratedTerminal",

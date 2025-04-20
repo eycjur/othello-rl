@@ -1,7 +1,6 @@
-import copy
-
 import typer
 from tqdm import tqdm
+
 from src.agent import (
     AgentInterface,
     DQNAgent,
@@ -71,7 +70,7 @@ def learn(
             )
             my_agent.plot_history()
             my_agent.sync_model(opponent_agent)
-            my_agent.save(f"output/agent.pkl")
+            my_agent.save("output/agent.pkl")
 
     if not is_test:
         my_agent.plot_history()

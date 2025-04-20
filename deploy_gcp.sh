@@ -3,6 +3,7 @@ set -Ceuo pipefail
 
 source .env
 
+gcloud config set builds/use_kaniko False
 gcloud builds submit \
 	--tag "gcr.io/${PROJECT_ID}/${CONTAINER_NAME}" \
 	--project "${PROJECT_ID}"

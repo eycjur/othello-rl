@@ -1,0 +1,16 @@
+services:
+  app:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: ${CONTAINER_NAME}
+    volumes:
+      - ./:/app:cached
+      - ./credentials:/credentials:ro
+    working_dir: /app
+    env_file:
+      - .env
+    ports:
+      - 127.0.0.1:8080:8080
+      - 127.0.0.1:5500:5500  # for live server
+    tty: true

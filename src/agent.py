@@ -9,10 +9,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from keras import backend as K
-from keras.layers import Dropout  # noqa
-from keras.layers import Activation, Add, Conv2D, Dense, Flatten, Input
+from keras.layers import (
+    Activation,
+    Add,
+    Conv2D,
+    Dense,
+    Dropout,  # noqa
+    Flatten,
+    Input,
+)
 from keras.models import Model, Sequential
-from keras.optimizers import Adam
 from keras.utils import to_categorical
 
 from src.othello import Board
@@ -118,7 +124,7 @@ class DQNAgent(TrainAgentInterface):
     def __init__(
         self,
         shape: tuple[int, int],
-        replay_buffer: ReplayBuffer = ReplayBuffer(1000),
+        replay_buffer: ReplayBuffer | None = None,
         gamma: float = 0.98,
         epsilon: float = 0.5,
         epsilon_decay: float = 0.9995,
@@ -128,7 +134,7 @@ class DQNAgent(TrainAgentInterface):
         activation: str = "relu",
         dropout: float = 0,
         loss_func: Any = "mean_squared_error",  # keras.losses.Huber(),
-        optimizer: Any = Adam(lr=0.01),
+        optimizer: Any = None,
     ) -> None:
         """Q関数を用いた方策
 
@@ -141,13 +147,19 @@ class DQNAgent(TrainAgentInterface):
         self._epsilon = epsilon
         self._epsilon_decay = epsilon_decay
         self._epsilon_min = epsilon_min
-        self.memory = replay_buffer
+        if replay_buffer is None:
+            self.memory = ReplayBuffer(1000)
+        else:
+            self.memory = replay_buffer
         self._num_block = num_block
         self._filter = filter
         self._activation = activation
         self._dropout = dropout
         self._loss_func = loss_func
-        self._optimizer = optimizer
+        if optimizer is None:
+            self._optimizer = tf.keras.optimizers.Adam(0.01)
+        else:
+            self._optimizer = optimizer
 
         self.model = self._build_model()
         self._target_model = self._build_model()
@@ -312,7 +324,10 @@ class DQNAgent(TrainAgentInterface):
             np.ndarray: 入力データ
         """
         # 白番と黒番で同じモデルを使うので、白番の場合は盤面を反転させる
-        encoded_matrix = to_categorical(state.get_array() * turn.stone.value - min(Stone).value, num_classes=len(Stone))
+        encoded_matrix = to_categorical(
+            state.get_array() * turn.stone.value - min(Stone).value,
+            num_classes=len(Stone),
+        )
         return np.expand_dims(encoded_matrix, 0)
 
     def _create_y(self, X: np.ndarray, action: Place, target: float) -> np.ndarray:
@@ -331,7 +346,9 @@ class DQNAgent(TrainAgentInterface):
         target_[0][action.y, action.x] = target
         return target_
 
-    def _data_augmentation(self, X: np.ndarray, y: np.ndarray, k: Optional[int] = None) -> None:
+    def _data_augmentation(
+        self, X: np.ndarray, y: np.ndarray, k: Optional[int] = None
+    ) -> None:
         """データ拡張
 
         Args:

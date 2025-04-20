@@ -4,7 +4,7 @@ from dash import html
 from dash.dependencies import Input, Output
 
 from src.agent import TrainAgentInterface
-from src.othello import Othello
+from src.othello import Board, Othello
 from src.utils.dataclass import Pass, Place
 from src.utils.enums import Stone
 from src.utils.util import Turn, change_stone
@@ -23,36 +23,69 @@ ai_stone = Stone.WHITE
 game = Othello(size=SIZE)
 
 
-def create_board(board):
+def create_board(board: Board) -> html.Table:
+    table_style = {
+        "borderCollapse": "collapse",
+    }
+    cell_style = {
+        "width": "40px",
+        "height": "40px",
+        "border": "1px solid black",
+        "padding": "0",
+        "backgroundColor": "#a0d9a0",  # Common board color
+    }
+    base_stone_style = {
+        "width": "80%",
+        "height": "80%",
+        "borderRadius": "16px",  # 40px * 0.8 / 2
+        "margin": "auto",
+        "padding": "0",
+        "border": "none",
+        "display": "block",
+    }
+    black_stone_style = base_stone_style | {
+        "backgroundColor": "black",
+    }
+    white_stone_style = base_stone_style | {
+        "backgroundColor": "white",
+    }
+    empty_stone_style = {
+        "width": "100%",
+        "height": "100%",
+        "opacity": 0,
+    }
+
     return html.Table(
-        [
+        style=table_style,
+        children=[
             html.Tr(
                 [
                     html.Td(
-                        html.Button(
-                            "",
-                            id="button-{}-{}".format(i, j),
-                            style=dict(
-                                height="40px",
-                                width="40px",
-                                backgroundColor="white"
-                                if board[Place(y=i, x=j)] == Stone.WHITE
-                                else "black"
-                                if board[Place(y=i, x=j)] == Stone.BLACK
-                                else "green",
-                            ),
-                            disabled=board[Place(y=i, x=j)] != Stone.EMPTY,
-                        )
+                        style=cell_style,
+                        children=[
+                            html.Button(
+                                "",
+                                style=(
+                                    black_stone_style
+                                    if board[Place(y=i, x=j)] == Stone.BLACK
+                                    else white_stone_style
+                                    if board[Place(y=i, x=j)] == Stone.WHITE
+                                    else empty_stone_style
+                                ),
+                                id="button-{}-{}".format(i, j),
+                                disabled=board[Place(y=i, x=j)] != Stone.EMPTY,
+                            )
+                        ],
                     )
                     for j in range(SIZE)
                 ]
             )
             for i in range(SIZE)
-        ]
+        ],
     )
 
 
-def layout():
+def layout() -> dbc.Container:
     return dbc.Container(
         [
             html.Div(
@@ -60,17 +93,22 @@ def layout():
                 id="board-container",
                 className="d-flex align-items-center justify-content-center",
             ),
-            html.Button(
-                "Reset",
-                id="reset-button",
-                n_clicks=0,
-                className="mx-auto",
-            ),
-            html.Button(
-                "Pass",
-                id="pass-button",
-                n_clicks=0,
-                className="mx-auto",
+            html.Div(
+                className="my-1",
+                children=[
+                    html.Button(
+                        "Reset",
+                        id="reset-button",
+                        n_clicks=0,
+                        className="mx-auto",
+                    ),
+                    html.Button(
+                        "Pass",
+                        id="pass-button",
+                        n_clicks=0,
+                        className="mx-auto",
+                    ),
+                ],
             ),
             html.Div(
                 f'You are playing as {"Black" if user_stone == Stone.BLACK else "White"}',
@@ -98,7 +136,7 @@ app.layout = layout
         for j in range(SIZE)
     ],
 )
-def update_board(n_reset, n_pass, *args):
+def update_board(n_reset: int, n_pass: int, *args: list[int]) -> tuple[html.Table, str]:
     # コールバックのトリガーを取得
     ctx = dash.callback_context
     if not ctx.triggered:
@@ -113,16 +151,16 @@ def update_board(n_reset, n_pass, *args):
         if len(game.search_place_candidate(user_stone)) != 0:
             return dash.no_update, "You can't pass"
         game.put(Pass(), user_stone)
-        return create_board(game.get_board()), ""
+    else:
+        # 押されたボタンの位置を取得
+        i, j = map(int, button_id.split("-")[1:])
+        place = Place(y=i, x=j)
+        # Handle move
+        if place not in game.search_place_candidate(user_stone):
+            return dash.no_update, "You can't put there"
 
-    # 押されたボタンの位置を取得
-    i, j = map(int, button_id.split("-")[1:])
-    place = Place(y=i, x=j)
-    # Handle move
-    if place not in game.search_place_candidate(user_stone):
-        return dash.no_update, "You can't put there"
+        game.put(place, user_stone)
 
-    game.put(place, user_stone)
     # Agent's move
     agent_move = agent.get_action(
         game.get_board(),
